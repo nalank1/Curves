@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hilbert Curve</title>
+  <style>
+    body {
+        margin: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        background: radial-gradient(circle at center, #1e1e2f, #0d0d1a);
+        overflow: hidden
+    }
+
+    canvas {
+      display: block;
+      box-shadow: 0 0 20px rgba(255, 255, 255, 0.2),
+                  0 0 50px rgba(255, 255, 255, 0.15),
+                  0 0 80px rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="hilbertCanvas" width="512" height="512"></canvas>
+
+  <script>
+    const canvas = document.getElementById("hilbertCanvas");
+    const ctx = canvas.getContext("2d");
+
+    function resizeCanvas() {
+        canvas.width = window.innerWidth * 0.9;
+        canvas.height = window.innerHeight * 0.9;
+    }
+
+    resizeCanvas();
+    window.addEventListener("resize", resizeCanvas)
+
+    const order = 5;
+    const N = Math.pow(2, order);
+    const total = N * N;
+    const path = [];
+    let counter = 0;
+
+    function setup() {
+      for (let i = 0; i < total; i++) {
+        path[i] = hilbert(i);
+        const len = canvas.width / N;
+        path[i].x *= len;
+        path[i].y *= len;
+        path[i].x += len / 2;
+        path[i].y += len / 2;
+      }
+      draw();
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      ctx.fillStyle = "rgba(30, 30, 47, 0.9)";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.lineWidth = 2;
+      ctx.lineJoin = "round";
+
+      for (let i = 1; i < counter; i++) {
+        const h = (i / path.length) * 360;
+        ctx.strokeStyle = `hsla(${h}, 100%, 60%, 0.8)`;
+        ctx.shadowColor = `hsla(${h}, 100%, 60%, 0.5)`;
+        ctx.shadowBlur = 10;
+        ctx.moveTo(path[i - 1].x, path[i - 1].y);
+        ctx.lineTo(path[i].x, path[i].y);
+        ctx.stroke();
+      }
+      
+
+      counter += 1;
+      if (counter >= path.length) counter = 0;
+
+      requestAnimationFrame(draw);
+    }
+
+    function hilbert(i) {
+      const points = [
+        { x: 0, y: 0 },
+        { x: 0, y: 1 },
+        { x: 1, y: 1 },
+        { x: 1, y: 0 }
+      ];
+
+      let index = i & 3;
+      let v = { ...points[index] };
+
+      for (let j = 1; j < order; j++) {
+        i = i >>> 2;
+        index = i & 3;
+        const len = Math.pow(2, j);
+
+        if (index === 0) {
+          const temp = v.x;
+          v.x = v.y;
+          v.y = temp;
+        } else if (index === 1) {
+          v.y += len;
+        } else if (index === 2) {
+          v.x += len;
+          v.y += len;
+        } else if (index === 3) {
+          const temp = len - 1 - v.x;
+          v.x = len - 1 - v.y;
+          v.y = temp;
+          v.x += len;
+        }
+      }
+      return v;
+    }
+
+    setup();
+  </script>
+</body>
+</html>
